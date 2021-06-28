@@ -20,7 +20,7 @@ BIT = float(not NEGATIVO)
 THRESHOLD = 0.7
 ALTURA_MIN = 1
 LARGURA_MIN = 1
-N_PIXELS_MIN = 10
+N_PIXELS_MIN = 20
 
 #===============================================================================
 
@@ -95,6 +95,9 @@ def inunda (blob, img, row, col):
         
     if check_inunda(img, row+1, col):
         blob, img = inunda(blob, img, row+1, col)
+        
+    if check_inunda(img, row-1, col):
+        blob, img = inunda(blob, img, row-1, col)
 
     if check_inunda(img, row, col+1):
         blob, img = inunda(blob, img, row, col+1)
@@ -102,7 +105,7 @@ def inunda (blob, img, row, col):
     return blob, img
 
 def check_inunda(img, row, col):
-    return img[row][col][0] == BIT and pixel_nao_mapeado(img, row, col) and range_permitido(img, row, col)
+    return range_permitido(img, row, col) and img[row][col][0] == BIT and pixel_nao_mapeado(img, row, col)
 
 def pixel_nao_mapeado(img, row, col):
     return img[row][col][0] == BIT or img[row][col][0] == (not BIT)
