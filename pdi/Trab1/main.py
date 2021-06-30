@@ -5,6 +5,10 @@
 # Universidade Tecnológica Federal do Paraná
 #===============================================================================
 
+#===============================================================================
+# Alunos: Caroline Rosa & Leonardo Trevisan
+#===============================================================================
+
 import sys
 import timeit
 import numpy as np
@@ -13,7 +17,7 @@ import sys
 
 #===============================================================================
 
-INPUT_IMAGE =  'arroz.bmp'#'documento-3mp.bmp'
+INPUT_IMAGE =  'arroz.bmp'
 
 NEGATIVO = False
 BIT = float(not NEGATIVO)
