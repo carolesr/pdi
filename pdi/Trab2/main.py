@@ -19,23 +19,46 @@ import math as m
 #===============================================================================
 
 INPUT_IMAGE =  'flores.bmp'
-ALTURA = 21
-LARGURA = 21
+ALTURA = 101
+LARGURA = 101
+
+def filtro_media_separavel(img):
+
+    img_out = img
+    for row in range(img.shape[0]):
+        for col in range(img.shape[1]):
+            for color in range(img.shape[2]):
+
+                soma = 0.0
+                for col_janela in range(col - m.floor(LARGURA/2), col + m.floor(LARGURA/2)+1):
+                    soma += img[row][col_janela][color] if check_bordas(img, row, col_janela) else 1.0
+                img_out[row][col][color] = float(soma / LARGURA)
+
+    img = img_out
+    for row in range(img.shape[0]):
+        for col in range(img.shape[1]):
+            for color in range(img.shape[2]):
+
+                soma = 0.0
+                for row_janela in range(row - m.floor(ALTURA/2), row + m.floor(ALTURA/2)+1):
+                    soma += img[row_janela][col][color] if check_bordas(img, row_janela, col) else 1.0
+                img_out[row][col][color] = float(soma / ALTURA)
+
+    return img_out
+
 
 def filtro_media_ingenuo(img):
 
     img_out = img
-
     for row in range(img.shape[0]):
-        for col in range(img.shape[1]):            
+        for col in range(img.shape[1]):
             for color in range(img.shape[2]):
 
                 soma = 0.0
-
                 for row_janela in range(row - m.floor(ALTURA/2), row + m.floor(ALTURA/2)+1):
                     for col_janela in range(col - m.floor(LARGURA/2), col + m.floor(LARGURA/2)+1):
 
-                        soma += img[row_janela][col_janela][color] if check_bordas(img, row_janela, col_janela) else 0.0
+                        soma += img[row_janela][col_janela][color] if check_bordas(img, row_janela, col_janela) else 1.0
 
                 img_out[row][col][color] = float(soma / (ALTURA*LARGURA))
 
@@ -62,7 +85,8 @@ def main ():
     print(img.shape)
 
     start_time = timeit.default_timer ()
-    img2 = filtro_media_ingenuo(img)
+    # img2 = filtro_media_ingenuo(img)
+    img2 = filtro_media_separavel(img)
     cv2.imwrite (f'janela_{ALTURA}x{LARGURA}.png', img2*255)
     print ('Tempo: %f' % (timeit.default_timer () - start_time))
 
