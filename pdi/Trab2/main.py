@@ -14,38 +14,36 @@ import timeit
 import numpy as np
 import cv2
 import sys
+import math as m
 
 #===============================================================================
 
 INPUT_IMAGE =  'flores.bmp'
-JANELA = 3
+ALTURA = 21
+LARGURA = 21
 
-def filtro_media_ingenuo(img, janela):
+def filtro_media_ingenuo(img):
+
+    img_out = img
 
     for row in range(img.shape[0]):
-        for col in range(img.shape[1]):
-            
-            for color in range(3):
+        for col in range(img.shape[1]):            
+            for color in range(img.shape[2]):
 
-                soma = img[row][col][color]
-                for camada in range(1, janela-1):
-                    soma += get_valor_pixel(img, row-camada, col, color)
-                    soma += get_valor_pixel(img, row-camada, col+camada, color)
-                    soma += get_valor_pixel(img, row, col+camada, color)
-                    soma += get_valor_pixel(img, row+camada, col+camada, color)
-                    soma += get_valor_pixel(img, row+camada, col, color)
-                    soma += get_valor_pixel(img, row+camada, col-camada, color)
-                    soma += get_valor_pixel(img, row, col-camada, color)
-                    soma += get_valor_pixel(img, row-camada, col-camada, color)
+                soma = 0.0
 
-                img[row][col][color] = float(soma / (janela*janela))
+                for row_janela in range(row - m.floor(ALTURA/2), row + m.floor(ALTURA/2)+1):
+                    for col_janela in range(col - m.floor(LARGURA/2), col + m.floor(LARGURA/2)+1):
 
-    return img
+                        soma += img[row_janela][col_janela][color] if check_bordas(img, row_janela, col_janela) else 0.0
 
-def get_valor_pixel(img, row, col, color):
-    if row < img.shape[0] and row >= 0 and col < img.shape[1] and col >= 0:
-        return img[row][col][color]
-    return 0.0                                                                                                     
+                img_out[row][col][color] = float(soma / (ALTURA*LARGURA))
+
+    return img_out
+
+def check_bordas(img, row, col):
+    return row < img.shape[0] and row >= 0 and col < img.shape[1] and col >= 0
+
 #===============================================================================
 
 def main ():
@@ -64,19 +62,9 @@ def main ():
     print(img.shape)
 
     start_time = timeit.default_timer ()
-    img2 = filtro_media_ingenuo(img, 3)
-    cv2.imwrite ('janela_3.png', img2*255)
-    print ('Tempo janela 3: %f' % (timeit.default_timer () - start_time))
-
-    start_time = timeit.default_timer ()
-    img2 = filtro_media_ingenuo(img, 5)
-    cv2.imwrite ('janela_5.png', img2*255)
-    print ('Tempo janela 5: %f' % (timeit.default_timer () - start_time))
-
-    start_time = timeit.default_timer ()
-    img2 = filtro_media_ingenuo(img, 7)
-    cv2.imwrite ('janela_7.png', img2*255)
-    print ('Tempo janela 7: %f' % (timeit.default_timer () - start_time))
+    img2 = filtro_media_ingenuo(img)
+    cv2.imwrite (f'janela_{ALTURA}x{LARGURA}.png', img2*255)
+    print ('Tempo: %f' % (timeit.default_timer () - start_time))
 
     cv2.waitKey ()
     cv2.destroyAllWindows ()
