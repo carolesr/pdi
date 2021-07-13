@@ -20,44 +20,62 @@ import math as m
 #===============================================================================
 
 INPUT_IMAGE =  'flores.bmp'
-ALTURA = 3
-LARGURA = 3
+ALTURA = 9
+LARGURA = 9
+
+def integral(img):
+    img_aux = np.zeros((img.shape[0], img.shape[1], img.shape[2]))
+    for color in range(img.shape[2]):
+        img_aux[0][0][color] = img[0][0][color]
+        # Calcula primeira coluna
+        for row in range(1, img.shape[0]):
+            img_aux[row][0][color] = img[row][0][color] + img_aux[row - 1][0][color]
+        # Calcula primeira linha
+        for col in range(1, img.shape[1]):
+            img_aux[0][col][color] = img[0][col][color] + img_aux[0][col - 1][color]
+        
+        # Calcula o resto da imagem integral reaproveitando somas anteriores
+        # I(x, y) = img(x, y) + I(x - 1, y) + I(x, y - 1) - I(x - 1, y - 1)
+        for row in range(1, img.shape[0]):
+            for col in range(1, img.shape[1]):
+                img_aux[row][col][color] = img[row][col][color] + img_aux[row][col - 1][color] + img_aux[row - 1][col][color] - img_aux[row - 1][col - 1][color]
+    return img_aux
 
 def filtro_imagens_integrais(img):
     
-    img_aux = img
-    for color in range(img_aux.shape[2]):
-        for row in range(img_aux.shape[0]):
-            for col in range(img_aux.shape[1]):
-                img_aux[row][col][color] = img_aux[row][col][color] + (img_aux[row][col-1][color] if check_bordas(img_aux, row, col-1) else 0)
+    img_aux = integral(img)
 
-    for color in range(img_aux.shape[2]):
-        for row in range(img_aux.shape[0]):
-            for col in range(img_aux.shape[1]):
-                img_aux[row][col][color] = img_aux[row][col][color] + (img_aux[row-1][col][color] if check_bordas(img_aux, row-1, col) else 0)
-
-    # return img_aux
-
-    img_out = img_aux
+    alto2 = ALTURA // 2
+    laro2 = LARGURA // 2
     for row in range(img_aux.shape[0]):
         for col in range(img_aux.shape[1]):
             for color in range(img_aux.shape[2]):
+                #┌─────────┐
+                #│         │
+                #│   ┌───┬─┤ y1
+                #│   │ K │ │
+                #│   ├───┼─┤ y2
+                #└───┼───┼─┘
+                #    x1  x2
+                x1 = col - laro2 - 1
+                x2 = col + laro2
+                y1 = row - alto2 - 1
+                y2 = row + alto2
+                if (x1 < 0):
+                    x1 = 0
+                if (y1 < 0):
+                    y1 = 0
+                if (x2 >= img.shape[1]):
+                    x2 = img.shape[1] - 1
+                if (y2 >= img.shape[0]):
+                    y2 = img.shape[0] - 1
 
-                if check_bordas(img_aux, row-ALTURA, col) and check_bordas(img_aux, row, col-LARGURA) and check_bordas(img_aux, row-ALTURA, col-LARGURA):
-                    print(img_aux[row][col][color])
-                    print(img_aux[row-ALTURA][col][color])
-                    print(img_aux[row][col-LARGURA][color])
-                    print(img_aux[row-ALTURA][col-LARGURA][color])
-                    valor = img_aux[row][col][color] - img_aux[row-ALTURA][col][color] - img_aux[row][col-LARGURA][color] + img_aux[row-ALTURA][col-LARGURA][color]
-                    valor = float(valor / (ALTURA * LARGURA))
-                    print(f'pixel final: {valor}')
-                    #esse valor ta passando de 1 oq eu faço??????????
-                    img_out[row][col][color] = valor
-                else: 
-                    # print('out of range')
-                    img_out[row][col][color] = img[row][col][color]
+                valor = img_aux[y2][x2][color] - img_aux[y1][x2][color] - img_aux[y2][x1][color] + img_aux[y1][x1][color]
+                area = float((x2 - x1) * (y2 - y1))
+                valor = float(valor) / area
+                img[row][col][color] = valor
 
-    return img_out
+    return img
 
 
 def filtro_media_separavel(img):
@@ -108,7 +126,6 @@ def check_bordas(img, row, col):
 #===============================================================================
 
 def main ():
-
     # Abre a imagem em escala de cinza.
     img = cv2.imread (INPUT_IMAGE)
     if img is None:
