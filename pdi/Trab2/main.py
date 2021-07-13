@@ -9,6 +9,7 @@
 # Alunos: Caroline Rosa & Leonardo Trevisan
 #===============================================================================
 
+from os import altsep
 import sys
 import timeit
 import numpy as np
@@ -19,8 +20,45 @@ import math as m
 #===============================================================================
 
 INPUT_IMAGE =  'flores.bmp'
-ALTURA = 101
-LARGURA = 101
+ALTURA = 3
+LARGURA = 3
+
+def filtro_imagens_integrais(img):
+    
+    img_aux = img
+    for color in range(img_aux.shape[2]):
+        for row in range(img_aux.shape[0]):
+            for col in range(img_aux.shape[1]):
+                img_aux[row][col][color] = img_aux[row][col][color] + (img_aux[row][col-1][color] if check_bordas(img_aux, row, col-1) else 0)
+
+    for color in range(img_aux.shape[2]):
+        for row in range(img_aux.shape[0]):
+            for col in range(img_aux.shape[1]):
+                img_aux[row][col][color] = img_aux[row][col][color] + (img_aux[row-1][col][color] if check_bordas(img_aux, row-1, col) else 0)
+
+    # return img_aux
+
+    img_out = img_aux
+    for row in range(img_aux.shape[0]):
+        for col in range(img_aux.shape[1]):
+            for color in range(img_aux.shape[2]):
+
+                if check_bordas(img_aux, row-ALTURA, col) and check_bordas(img_aux, row, col-LARGURA) and check_bordas(img_aux, row-ALTURA, col-LARGURA):
+                    print(img_aux[row][col][color])
+                    print(img_aux[row-ALTURA][col][color])
+                    print(img_aux[row][col-LARGURA][color])
+                    print(img_aux[row-ALTURA][col-LARGURA][color])
+                    valor = img_aux[row][col][color] - img_aux[row-ALTURA][col][color] - img_aux[row][col-LARGURA][color] + img_aux[row-ALTURA][col-LARGURA][color]
+                    valor = float(valor / (ALTURA * LARGURA))
+                    print(f'pixel final: {valor}')
+                    #esse valor ta passando de 1 oq eu faço??????????
+                    img_out[row][col][color] = valor
+                else: 
+                    # print('out of range')
+                    img_out[row][col][color] = img[row][col][color]
+
+    return img_out
+
 
 def filtro_media_separavel(img):
 
@@ -86,8 +124,9 @@ def main ():
 
     start_time = timeit.default_timer ()
     # img2 = filtro_media_ingenuo(img)
-    img2 = filtro_media_separavel(img)
-    cv2.imwrite (f'janela_{ALTURA}x{LARGURA}.png', img2*255)
+    # img2 = filtro_media_separavel(img)
+    img2 = filtro_imagens_integrais(img)
+    cv2.imwrite (f'integrais_janela_{ALTURA}x{LARGURA}.png', img2*255)
     print ('Tempo: %f' % (timeit.default_timer () - start_time))
 
     cv2.waitKey ()
