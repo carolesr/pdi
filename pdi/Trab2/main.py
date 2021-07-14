@@ -19,7 +19,7 @@ import math as m
 
 #===============================================================================
 
-INPUT_IMAGE =  'flores.bmp'
+INPUT_IMAGE =  'plantas.jpg'
 ALTURA = 9
 LARGURA = 9
 
@@ -41,7 +41,7 @@ def integral(img):
                 img_aux[row][col][color] = img[row][col][color] + img_aux[row][col - 1][color] + img_aux[row - 1][col][color] - img_aux[row - 1][col - 1][color]
     return img_aux
 
-def filtro_imagens_integrais(img):
+def filtro_media_imagens_integrais(img):
     
     img_aux = integral(img)
 
@@ -80,7 +80,7 @@ def filtro_imagens_integrais(img):
 
 def filtro_media_separavel(img):
 
-    img_out = img
+    img_out = np.zeros((img.shape[0], img.shape[1], img.shape[2]))
     for row in range(img.shape[0]):
         for col in range(img.shape[1]):
             for color in range(img.shape[2]):
@@ -105,7 +105,7 @@ def filtro_media_separavel(img):
 
 def filtro_media_ingenuo(img):
 
-    img_out = img
+    img_out = np.zeros((img.shape[0], img.shape[1], img.shape[2]))
     for row in range(img.shape[0]):
         for col in range(img.shape[1]):
             for color in range(img.shape[2]):
@@ -137,14 +137,20 @@ def main ():
     img = img.reshape ((img.shape [0], img.shape [1], img.shape [2]))
     img = img.astype (np.float32) / 255
 
-    print(img.shape)
-
     start_time = timeit.default_timer ()
-    # img2 = filtro_media_ingenuo(img)
-    # img2 = filtro_media_separavel(img)
-    img2 = filtro_imagens_integrais(img)
-    cv2.imwrite (f'integrais_janela_{ALTURA}x{LARGURA}.png', img2*255)
-    print ('Tempo: %f' % (timeit.default_timer () - start_time))
+    img_out = filtro_media_ingenuo(img)
+    cv2.imwrite (f'ingeuno_janela_{ALTURA}x{LARGURA}.png', img_out*255)
+    print ('Tempo ingênuo: %f' % (timeit.default_timer () - start_time))
+    
+    start_time = timeit.default_timer ()
+    img_out = filtro_media_separavel(img)
+    cv2.imwrite (f'separavel_janela_{ALTURA}x{LARGURA}.png', img_out*255)
+    print ('Tempo separável: %f' % (timeit.default_timer () - start_time))
+    
+    start_time = timeit.default_timer ()
+    img_out = filtro_media_imagens_integrais(img)
+    cv2.imwrite (f'integrais_janela_{ALTURA}x{LARGURA}.png', img_out*255)
+    print ('Tempo integrais: %f' % (timeit.default_timer () - start_time))
 
     cv2.waitKey ()
     cv2.destroyAllWindows ()
