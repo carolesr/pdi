@@ -1,24 +1,18 @@
-#===============================================================================
-# Exemplo: segmentação de uma imagem em escala de cinza.
-#-------------------------------------------------------------------------------
-# Autor: Bogdan T. Nassu
-# Universidade Tecnológica Federal do Paraná
-#===============================================================================
 
 #===============================================================================
+# Trabalho 3 - Bloom lighting
 # Alunos: Caroline Rosa & Leonardo Trevisan
 #===============================================================================
 
 from os import altsep
 import sys
-import timeit
 import numpy as np
 import cv2
 import sys
 
 #===============================================================================
 
-INPUT_IMAGE =  'jogo.bmp'
+INPUT_IMAGE =  'carro.bmp'
 THRESHOLD = 0.5
 ALPHA = 1
 BETA= 0.1
@@ -37,8 +31,16 @@ def bloom_box_blur(img, original):
     for round in range(4,8):
         blur += cv2.blur(img, (round*round, round*round))
 
-    # Não achei como ser mt criativa aqui, principalmente com o Alpha, não vejo utilidade pra ele pq só estoura a imagem
-    # Pra deixar um resultado melhor tinha q tratar contraste e aquelas parada porém sem saco
+    return original*ALPHA + blur*BETA
+
+def bloom_gaussian(img, original):
+    blur = np.zeros((img.shape[0], img.shape[1], img.shape[2]))
+    sigma = 1
+    # Borra 4 vezes, com janelas de 17, 21, 25 e 29
+    for round in range(4,8): 
+        blur += cv2.GaussianBlur(img, ((round*4)+1, (round*4)+1), sigma, sigma)
+        sigma += 1
+
     return original*ALPHA + blur*BETA
 
 
@@ -66,6 +68,10 @@ def main ():
     bloom_img = bloom_box_blur(bright_pass_img, img)
     cv2.imwrite (f'bloom-box-blur.png', bloom_img*255)
     print('Box-Blur Bloom done')
+    
+    bloom_img = bloom_gaussian(bright_pass_img, img)
+    cv2.imwrite (f'bloom-gaussian.png', bloom_img*255)
+    print('Gaussian Bloom done')
 
     cv2.waitKey ()
     cv2.destroyAllWindows ()
