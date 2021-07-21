@@ -29,7 +29,10 @@ def bloom_box_blur(img, original):
     blur = np.zeros((img.shape[0], img.shape[1], img.shape[2]))
     # Borra 4 vezes, com janelas de 16, 25, 36 e 49
     for round in range(4,8):
-        blur += cv2.blur(img, (round*round, round*round))
+        crrblur = img.copy()
+        for i in range(4): # Simula filtro gaussiano aplicando filtro da média diversas vezes
+            crrblur = cv2.blur(crrblur, (round*round, round*round))
+        blur += crrblur
 
     return original*ALPHA + blur*BETA
 
