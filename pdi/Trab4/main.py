@@ -13,9 +13,9 @@ import timeit
 
 #===============================================================================
 
-ALTURA = 150
-LARGURA = 150
-FATOR = 0.225
+ALTURA = 50
+LARGURA = 50
+FATOR = 0.20
 ALTURA_MIN = 1
 LARGURA_MIN = 1
 N_PIXELS_MIN = 30
@@ -115,6 +115,9 @@ def check_inunda(img, row, col):
 def range_permitido(img, row, col):
     return row >= 0 and row < img.shape[0] and col >= 0 and col < img.shape[1]
 
+def trata_superblob(superblob, media):
+    return round(superblob['n_pixels'] / media)
+
 def calcula_total_arroz(componentes):
     superblobs = []
     superblobscount = -1
@@ -138,7 +141,7 @@ def calcula_total_arroz(componentes):
     print(superblobscount, "super componentes detectados.")
     
     for superblob in superblobs:
-        total_arroz += round(superblob['n_pixels'] / media)
+        total_arroz += trata_superblob(superblob, media)
 
     return total_arroz
 
