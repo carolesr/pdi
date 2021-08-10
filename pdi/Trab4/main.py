@@ -13,8 +13,8 @@ import timeit
 
 #===============================================================================
 
-ALTURA = 50
-LARGURA = 50
+ALTURA = 100
+LARGURA = 100
 FATOR = 0.20
 ALTURA_MIN = 1
 LARGURA_MIN = 1
