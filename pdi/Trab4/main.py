@@ -131,6 +131,22 @@ def range_permitido(img, row, col):
     return row >= 0 and row < img.shape[0] and col >= 0 and col < img.shape[1]
 
 
+def calcula_total_arroz(componentes):
+
+    tamanhos = [c['n_pixels'] for c in componentes]
+    media = np.mean(tamanhos)
+
+    total_arroz = 0
+    for blob in componentes:
+        tam = blob['n_pixels']
+        n = tam / media
+        # print({'tam': tam, 'n':n, 'round n': round(n)})
+        total_arroz += round(n)
+
+    return total_arroz
+
+
+
 #===============================================================================
 
 def main ():
@@ -172,6 +188,9 @@ def main ():
 
         cv2.imwrite (f'arroz_{input_image}.png', img*255)
         print(f'arroz {input_image}.bmp done')
+
+        total = calcula_total_arroz(componentes)
+        print(f'O total de arroz da imagem {input_image}.bmp é {total}!\n')
 
         cv2.waitKey ()
         cv2.destroyAllWindows ()
