@@ -64,7 +64,7 @@ def limiarizacao_adaptativa(img):
 def check_bordas(img, row, col):
     return row < img.shape[0] and row >= 0 and col < img.shape[1] and col >= 0
 
-def rotula (img, largura_min, altura_min, n_pixels_min):
+def rotula(img, largura_min, altura_min, n_pixels_min):
     result = []
     label = 2.0
     
@@ -78,6 +78,7 @@ def rotula (img, largura_min, altura_min, n_pixels_min):
                 blob, img = inunda(blob, img, row, col)
                 blob = {
                     'label': label,
+                    'pixels' : blob['pixels'],
                     'n_pixels': len(blob['pixels']),
                     'T': min(blob['pixels'], key=lambda x:x['row'])['row'],
                     'L': min(blob['pixels'], key=lambda x:x['col'])['col'],
@@ -89,7 +90,7 @@ def rotula (img, largura_min, altura_min, n_pixels_min):
                 label += 1.0         
     return result
 
-def inunda (blob, img, row, col):
+def inunda(blob, img, row, col):
     label = blob['label']
     stack = []
     stack.append((row, col))
@@ -118,20 +119,38 @@ def range_permitido(img, row, col):
 def trata_superblob(superblob, media):
     return round(superblob['n_pixels'] / media)
 
-def calcula_total_arroz(componentes):
+# Cálcula a média de valores excluindo outliers (valores acima ou a baixo de 1.5 desvios padrões da média)
+def media_sem_outliers(valores : list):
+    valores.sort()
+    media = np.mean(valores)
+    std = np.std(valores)
+    while len(valores) > 0:
+        if valores[0] < media - 1.5 * std:
+            valores.remove(valores[0])
+        else:
+            break
+    while len(valores) > 0:
+        if valores[-1] > media + 1.5 * std:
+            valores.remove(valores[-1])
+        else:
+            break
+    return np.mean(valores)
+
+def calcula_total_arroz(componentes, img):
     superblobs = []
     superblobscount = -1
 
+    # Iterativamente, busca blobs muito fora da média
     while len(superblobs) != superblobscount:
         tamanhos = [c['n_pixels'] for c in componentes]
-        media = np.mean(tamanhos)
+        media = media_sem_outliers(tamanhos)
         superblobscount = len(superblobs)
         i = 0
         while i < len(componentes):
             blob = componentes[i]
             tam = blob['n_pixels']
             n = tam / media
-            if round(n) >= 2.0:
+            if n >= 1.5:
                 superblobs.append(blob)
                 componentes.remove(blob)
             else:
@@ -140,12 +159,17 @@ def calcula_total_arroz(componentes):
     total_arroz = len(componentes)
     print(superblobscount, "super componentes detectados.")
     
+    for c in componentes:
+        cv2.rectangle(img, (c ['L'], c ['T']), (c ['R'], c ['B']), (0,0,1))
+    
+    # Trata Superblobs
     for superblob in superblobs:
-        total_arroz += trata_superblob(superblob, media)
+        N = trata_superblob(superblob, media)
+        cv2.rectangle (img, (superblob['L'], superblob['T']), (superblob['R'], superblob['B']), (1,0,0))
+        cv2.putText(img, str(N), (superblob['L'] - 2, superblob['T'] - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+        total_arroz += N
 
     return total_arroz
-
-
 
 #===============================================================================
 
@@ -161,40 +185,47 @@ def main ():
         img = cv2.imread (input_image + '.bmp')
         if img is None:
             print ('Erro abrindo a imagem.\n')
-            sys.exit ()
+            sys.exit()
 
         # É uma boa prática manter o shape com 3 valores, independente da imagem ser
         # 0ida ou não. Também já convertemos para float32.
         img = img.reshape ((img.shape [0], img.shape [1], img.shape [2]))
         img = img.astype (np.float32) / 255
 
+        # Binariza com limiarizacao_adaptativa
         gray_scale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         start_time = timeit.default_timer()
         binarizada = limiarizacao_adaptativa(gray_scale)
-        print ('Tempo: %f' % (timeit.default_timer () - start_time))
-        cv2.imwrite (f'binarizada_{input_image}.png', binarizada*255)
+
+        # Utiliza morfologia para remover ruído e separar alguns blobs
+        kernel = np.ones((3,3),np.uint8)
+        erosion = cv2.erode(binarizada,kernel,iterations = 1)
+        kernel[0][0] = 0
+        kernel[2][2] = 0
+        kernel[0][2] = 0
+        kernel[2][0] = 0
+        dilation = cv2.dilate(erosion,kernel,iterations = 1)
+        
+        print('Tempo: %f' % (timeit.default_timer () - start_time))
+        cv2.imwrite (f'binarizada_{input_image}.png', dilation*255)
         print(f'binarizada {input_image}.bmp done')
-
+        
+        # Rotula Componentes
         start_time = timeit.default_timer ()
-        componentes = rotula(binarizada, LARGURA_MIN, ALTURA_MIN, N_PIXELS_MIN)
+        componentes = rotula(dilation, LARGURA_MIN, ALTURA_MIN, N_PIXELS_MIN)
         n_componentes = len(componentes)
-        print ('Tempo: %f' % (timeit.default_timer () - start_time))
-        print ('%d componentes detectados.' % n_componentes)
+        print('Tempo: %f' % (timeit.default_timer () - start_time))
+        print('%d componentes detectados.' % n_componentes)
 
-        # Mostra os objetos encontrados.
-        for c in componentes:
-            cv2.rectangle (img, (c ['L'], c ['T']), (c ['R'], c ['B']), (0,0,1))
-
-        cv2.imwrite (f'arroz_{input_image}.png', img*255)
-        print(f'arroz {input_image}.bmp done')
-
-        total = calcula_total_arroz(componentes)
+        # Calcula grãos de arroz por componente
+        total = calcula_total_arroz(componentes, img)
+        cv2.imwrite(f'arroz_{input_image}.png', img*255)
         print(f'O total de arroz da imagem {input_image}.bmp é {total}!\n')
 
-        cv2.waitKey ()
-        cv2.destroyAllWindows ()
+        cv2.waitKey()
+        cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    main ()
+    main()
 
 #===============================================================================
